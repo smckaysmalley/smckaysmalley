@@ -7,37 +7,38 @@ public class SimpleAnimation
 {
    private int x;
    private int y;
-   private JButton button;
+   private JButton startButton;
+    private JButton stopButton;
    private MyDrawPanel drawPanel;
-
+    private Boolean move;
+    private JFrame frame;
 
    public static void main (String [] args)
    {
-
-
        new SimpleAnimation().go();
    }
 
+    public SimpleAnimation()
+    {
+	x = 0;
+	y = 0;
+	move = false;
+	frame = new JFrame();
+    }
 
    public void go()
    {
-      JFrame frame = new JFrame();
-      x = 0;  
-      y = 0;
-
-
-      frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 
       drawPanel = new MyDrawPanel();
-      button = new JButton("CLICK ME");
+      startButton = new JButton("CLICK ME");
+      stopButton = new JButton();
 
-
-      button.addActionListener(new ButtonAction());
-
+      startButton.addActionListener(new ButtonAction());
 
       frame.getContentPane().add(BorderLayout.CENTER, drawPanel);
-      frame.getContentPane().add(BorderLayout.NORTH, button);
+      frame.getContentPane().add(BorderLayout.NORTH, startButton);
       frame.setSize(250, 300);
       frame.setVisible(true);
 
@@ -50,12 +51,24 @@ public class SimpleAnimation
        {
           public void actionPerformed(ActionEvent event)
           {
-             button.setText("OUCH!");
-
+	      move = true;
+            startButton.setText("OUCH!");
+	    stopButton.addActionListener(new StopAction());
+	    stopButton.setText("MAKE IT STOP!!!");
+	    frame.getContentPane().add(BorderLayout.SOUTH, stopButton);
 
              new Thread(drawPanel).start();
           }
        }
+
+    class StopAction
+	implements ActionListener
+    {
+	public void actionPerformed(ActionEvent even)
+	{
+	    move = false;
+	}
+    }
 
 
        class MyDrawPanel
@@ -78,7 +91,7 @@ public class SimpleAnimation
           public void run()
           {
              Boolean direction = true; // true is forward -- false is backwards
-             while(true)
+             while(move == true)
              {
                 if (direction)
                 {
