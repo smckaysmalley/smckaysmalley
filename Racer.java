@@ -1,70 +1,114 @@
-import java.awt.even.ActionListener;
+import java.awt.event.*;
 import javax.swing.Timer;
+import java.io.*;
 
-class Racer
-   implements ActionListener
+public class Racer
+   implements Runnable
 {
    private FileToucher mMonitor;
-   private Creator create;
-   private Creator destroy;
+   private FileManipulator mCreator;
+   private FileManipulator mDestroyer;
+   private static final int DEFAULT_DELAY = 1000;
 
    public Racer()
    {
       //initialize mMonitor
-      mMonitor = new FileToucher();
+      mMonitor = new OutputtingFileToucher();
+      mCreator = new FileManipulator(true);
+      mDestroyer = new FileManipulator(false);
+
    }
 
-   public void actionPerformed()
-   {
-      mMonitor.run();
-   }
+   ActionListener sequencePrinter =  new ActionListener()
+      {
+         public void actionPerformed(ActionEvent event)
+         {
+            mMonitor.run();
+            System.out.println("----------------------\n");
+         }
+      };
 
-   public void main()
+   public void run()
    {
+      new Timer(DEFAULT_DELAY, sequencePrinter).start();
       
+      mMonitor.setFileFilter(new PrefixFilter("file."));
+
+      mCreator.start();
+      mDestroyer.start();
+   }
+
+   public static void main(String [] args)
+   {
+      new Racer().run();
    }
 }
 
-class Creator
-   extends Manipulator, Thread
+class FileManipulator
+   extends Thread
 {
+   private int mFileNumber;
+   private Boolean liveElseDie;
+
+   public FileManipulator()
+   {
+      this(false); //default instantiates a destroyer
+   }
+
+   public FileManipulator(Boolean type)
+   {
+      mFileNumber = 0;
+      liveElseDie = type;
+   }
+
+   public File newFile(int num)
+   {
+      return new File(String.format("file.%05d", num));
+   }
+
    public void run()
    {
-      while (true)
+      try
       {
-         try
+         
+         if (!liveElseDie)
          {
-            if (newFileN(mFileNumber).createNewFile())
+            Thread.sleep(2000);
+         }
+
+         while (true)
+         {
+            if (liveElseDie)
             {
-               mFileNumber++;
+               newFile(mFileNumber).createNewFile();
             }
+            else
+            {
+               newFile(mFileNumber).delete();
+            }
+
+            ++mFileNumber;
             Thread.sleep(500);
          }
-         catch (Exception e)
-         {
-         }
+      }
+      catch (Exception e)
+      {         
       }
    }
 }
 
-class Destroyer
-   extends Manipulator, Thread
+class PrefixFilter
+   implements FileFilter
 {
-   public void run()
+   private String prefix;
+
+   public PrefixFilter(String pre)
    {
-      while (true)
-      {
-         try
-         {
-            if (newFileN(mFileNumber).delete())
-            {
-               mFileNumber++;
-            }
-            Thread.sleep(500);
-         }
-         catch (Exception e)
-         {
-         }
-      }
+      prefix = pre;
+   }
+
+   public boolean accept(File pFile)
+   {
+      return (pFile.isDirectory() || pFile.getName().startsWith(prefix));
    }
 }
